@@ -65,7 +65,9 @@ export default function DocumentJsonPage() {
         if (axios.isAxiosError(err)) {
           const status = err.response?.status;
           if (status === 403 || status === 404) {
-            setError("Você não tem permissão para acessar este documento.");
+            setError(
+              "O período de armazenamento do documento (30 dias) se esgotou.",
+            );
             return;
           }
         }

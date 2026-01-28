@@ -12,6 +12,7 @@ import { useAuth } from "./context/authContext";
 import { useUser } from "./context/userContext";
 import DocumentsPage from "./pages/DocumentsPage";
 import DocumentJsonPage from "./pages/DocumentJsonPage";
+import DocumentExpiredPage from "./pages/DocumentExpiredPage";
 import KeywordsPage from "./pages/KeywordsPage";
 import LogoutPage from "./pages/LogoutPage";
 import LoginPage from "./pages/LoginPage";
@@ -46,7 +47,7 @@ function Layout() {
     return unsubscribe;
   }, []);
   useEffect(() => {
-    if (location.pathname.startsWith("/admin") || location.pathname === "/billing") {
+    if (location.pathname.startsWith("/admin")) {
       setConfigOpen(true);
     }
   }, [location.pathname]);
@@ -237,6 +238,7 @@ function App() {
           <Route index element={<Navigate to="/documents" replace />} />
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/documents/:id/json" element={<DocumentJsonPage />} />
+          <Route path="/documents/:id/expired" element={<DocumentExpiredPage />} />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/extration" element={<KeywordsPage />} />
           <Route path="/presets" element={<PresetsPage />} />

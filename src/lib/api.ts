@@ -285,7 +285,12 @@ api.interceptors.response.use(
   },
 );
 
-export type DocumentStatus = "PENDING" | "PROCESSING" | "DONE" | "FAILED";
+export type DocumentStatus =
+  | "PENDING"
+  | "PROCESSING"
+  | "DONE"
+  | "FAILED"
+  | "DELETED";
 
 export type Document = {
   id: string;

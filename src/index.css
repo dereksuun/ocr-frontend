@@ -757,6 +757,10 @@ col.col-actions {
   background: var(--status-failed);
 }
 
+.status-deleted {
+  background: var(--status-failed);
+}
+
 .actions {
   display: flex;
   gap: 8px;

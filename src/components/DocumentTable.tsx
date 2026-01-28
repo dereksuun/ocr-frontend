@@ -60,6 +60,7 @@ const statusLabels: Record<string, string> = {
   PROCESSING: "Processando",
   DONE: "Processado",
   FAILED: "Falhou",
+  DELETED: "Deletado",
 };
 
 export default function DocumentTable({
@@ -264,6 +265,7 @@ export default function DocumentTable({
                 const statusText = statusLabels[statusValue] || String(statusValue);
                 const canReprocess = statusValue === "DONE";
                 const canDownloadJson = statusValue === "DONE";
+                const isDeleted = statusValue === "DELETED";
                 const rawSnippets = doc.match_snippets || [];
                 const fallbackSnippet = doc.search_snippet || "";
                 const snippets =
@@ -345,6 +347,8 @@ export default function DocumentTable({
                           <div className="drop-menu">
                             {canDownloadJson ? (
                               <Link to={`/documents/${doc.id}/json`}>Ver JSON</Link>
+                            ) : isDeleted ? (
+                              <Link to={`/documents/${doc.id}/expired`}>Ver JSON</Link>
                             ) : (
                               <span className="drop-item is-disabled">Ver JSON</span>
                             )}
@@ -356,18 +360,28 @@ export default function DocumentTable({
                               >
                                 Download JSON
                               </a>
+                            ) : isDeleted ? (
+                              <Link to={`/documents/${doc.id}/expired`}>
+                                Download JSON
+                              </Link>
                             ) : (
                               <span className="drop-item is-disabled">
                                 Download JSON
                               </span>
                             )}
-                            <a
-                              href={buildDownloadUrl(doc.id, "file")}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              Download arquivo
-                            </a>
+                            {isDeleted ? (
+                              <Link to={`/documents/${doc.id}/expired`}>
+                                Download arquivo
+                              </Link>
+                            ) : (
+                              <a
+                                href={buildDownloadUrl(doc.id, "file")}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Download arquivo
+                              </a>
+                            )}
                           </div>
                         </details>
                       </div>
