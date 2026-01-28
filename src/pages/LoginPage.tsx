@@ -64,7 +64,7 @@ export default function LoginPage() {
         <div className="page-header">
           <div>
             <h1>Entrar</h1>
-            <p className="help-text">Acesse o tratamento de documentos.</p>
+            <p className="help-text">Informe seus dados para acessar o sistema.</p>
           </div>
         </div>
         {isLoading ? (
@@ -73,11 +73,11 @@ export default function LoginPage() {
         {error ? <p className="error-hint">{error}</p> : null}
         <form className="settings-form" onSubmit={handleSubmit}>
           <label className="filter-field">
-            <span>Usuário</span>
+            <span>E-mail</span>
             <input
               className="input-text"
-              type="text"
-              autoComplete="username"
+              type="email"
+              autoComplete="email"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               required
@@ -99,7 +99,7 @@ export default function LoginPage() {
               {submitting ? "Entrando..." : "Entrar"}
             </button>
             <Link className="btn btn-ghost" to="/forgot-password">
-              Esqueci minha senha
+              Esqueceu sua senha?
             </Link>
           </div>
         </form>
