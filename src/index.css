@@ -1,24 +1,24 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap");
+
 :root {
-  --bg-start: #f5f7fb;
-  --bg-end: #ffffff;
+  --bg: #ffffff;
   --card: #ffffff;
-  --ink: #0f172a;
-  --muted: #475569;
+  --ink: #09090b;
+  --muted: #52525b;
   --accent: #d55b16;
-  --accent-dark: #b94e12;
+  --accent-dark: #b14d12;
   --accent-soft: rgba(213, 91, 22, 0.12);
   --accent-ink: #9a3f10;
-  --border: #e2e8f0;
-  --shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
-  --glow-strong: rgba(213, 91, 22, 0.1);
-  --glow-soft: rgba(15, 23, 42, 0.04);
-  --card-border: rgba(228, 231, 237, 0.9);
+  --border: #e4e4e7;
+  --shadow: 0 10px 30px rgba(9, 9, 11, 0.08);
+  --card-border: #e4e4e7;
   --input-bg: #ffffff;
   --input-bg-strong: #ffffff;
   --json-bg: #0b1224;
   --json-ink: #e5e7eb;
-  --link-hover: #d55b16;
-  --btn-shadow: rgba(213, 91, 22, 0.25);
+  --link-hover: #b14d12;
+  --btn-shadow: rgba(213, 91, 22, 0.2);
+  --focus-ring: rgba(213, 91, 22, 0.35);
   --status-pending: #f2c94c;
   --status-processing: #56ccf2;
   --status-done: #27ae60;
@@ -31,12 +31,10 @@
 
 body {
   margin: 0;
-  font-family: "Geist", "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-family: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, Arial,
+    sans-serif;
   color: var(--ink);
-  background:
-    radial-gradient(circle at top, var(--glow-strong), transparent 45%),
-    radial-gradient(circle at 20% 20%, var(--glow-soft), transparent 40%),
-    linear-gradient(120deg, var(--bg-start), var(--bg-end));
+  background: var(--bg);
   min-height: 100vh;
 }
 
@@ -62,7 +60,6 @@ a:hover {
   gap: 24px;
   background: var(--card);
   border-right: 1px solid var(--border);
-  box-shadow: 6px 0 24px rgba(15, 23, 42, 0.06);
   flex-shrink: 0;
 }
 
@@ -134,7 +131,7 @@ a:hover {
 .nav-link-button:hover {
   color: var(--ink);
   border-color: var(--border);
-  background: rgba(15, 23, 42, 0.04);
+  background: rgba(9, 9, 11, 0.04);
 }
 
 .app-main {
@@ -405,6 +402,7 @@ a:hover {
   font: inherit;
 }
 
+
 .search-field .input-text,
 .filter-field .input-select {
   width: 100%;
@@ -589,6 +587,7 @@ a:hover {
   letter-spacing: 0.05em;
   font-size: 12px;
 }
+
 
 .doc-name {
   font-weight: 600;
@@ -828,6 +827,7 @@ col.col-actions {
   margin-top: 16px;
   font-size: 14px;
 }
+
 
 .login-card {
   max-width: 420px;
