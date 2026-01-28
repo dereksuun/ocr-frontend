@@ -186,6 +186,22 @@ export const refreshAccessToken = async () => {
   }
 };
 
+export const requestPasswordReset = async (email: string) => {
+  await authApi.post("/api/auth/password-reset/", { email });
+};
+
+export const confirmPasswordReset = async (
+  uid: string,
+  token: string,
+  newPassword: string,
+) => {
+  await authApi.post("/api/auth/password-reset/confirm/", {
+    uid,
+    token,
+    new_password: newPassword,
+  });
+};
+
 let refreshPromise: Promise<string | null> | null = null;
 
 api.interceptors.request.use((config) => {

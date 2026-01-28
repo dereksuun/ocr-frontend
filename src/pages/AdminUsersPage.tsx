@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import type { Sector, UserSummary } from "../lib/api";
-import {
-  createUser,
-  deleteUser,
-  fetchSectors,
-  fetchUsers,
-  resetUserPassword,
-  updateUser,
-} from "../lib/api";
+import { createUser, fetchSectors, fetchUsers, resetUserPassword, updateUser } from "../lib/api";
 
 const toIdString = (value: string | number | null | undefined) =>
   value === null || value === undefined ? "" : String(value);
@@ -83,9 +76,7 @@ const getSectorLabel = (sector: Sector) => sector.name || `Setor ${sector.id}`;
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [sectors, setSectors] = useState<Sector[]>([]);
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [savingId, setSavingId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +99,6 @@ export default function AdminUsersPage() {
   const [editForm, setEditForm] = useState({
     name: "",
     password: "",
-    sectorId: "",
     isAdmin: false,
     isActive: true,
   });
@@ -131,11 +121,6 @@ export default function AdminUsersPage() {
       ]);
       setUsers(usersResponse.items);
       setSectors(sectorsResponse.items);
-      const nextDrafts: Record<string, string> = {};
-      usersResponse.items.forEach((user) => {
-        nextDrafts[toIdString(user.id)] = getUserSectorId(user);
-      });
-      setDrafts(nextDrafts);
     } catch {
       setError("Falha ao carregar usuários ou setores.");
     } finally {
@@ -278,47 +263,6 @@ export default function AdminUsersPage() {
     });
   }, [users, searchTerm, sectorFilter]);
 
-  const handleSave = async (user: UserSummary) => {
-    const userId = toIdString(user.id);
-    const currentSectorId = getUserSectorId(user);
-    const draftSectorId = drafts[userId] ?? currentSectorId;
-    if (draftSectorId === currentSectorId) {
-      return;
-    }
-    setSavingId(userId);
-    setError(null);
-    try {
-      const sectorIdValue = coerceSectorId(draftSectorId, sectors);
-      const response = await updateUser(user.id, { sector_id: sectorIdValue });
-      const matchedSector =
-        sectorIdValue === null
-          ? null
-          : sectors.find(
-              (sector) => toIdString(sector.id) === toIdString(sectorIdValue),
-            ) || null;
-      setUsers((prev) =>
-        prev.map((item) =>
-          toIdString(item.id) === userId
-            ? {
-                ...item,
-                ...response,
-                sector: matchedSector,
-                sector_id: matchedSector ? matchedSector.id : null,
-                sector_name: matchedSector ? matchedSector.name : null,
-              }
-            : item,
-        ),
-      );
-      setDrafts((prev) => ({
-        ...prev,
-        [userId]: draftSectorId,
-      }));
-    } catch {
-      setError("Falha ao atualizar usuário.");
-    } finally {
-      setSavingId(null);
-    }
-  };
 
   const openEdit = (user: UserSummary) => {
     const nameKey = resolveNameKey(user);
@@ -329,7 +273,6 @@ export default function AdminUsersPage() {
     setEditForm({
       name: getUserName(user),
       password: "",
-      sectorId: getUserSectorId(user),
       isAdmin: getAdminFlag(user),
       isActive: activeKey ? Boolean((user as Record<string, unknown>)[activeKey]) : true,
     });
@@ -353,10 +296,6 @@ export default function AdminUsersPage() {
     if (editForm.password.trim()) {
       payload.password = editForm.password.trim();
     }
-    const currentSectorId = getUserSectorId(editingUser);
-    if (editForm.sectorId !== currentSectorId) {
-      payload.sector_id = coerceSectorId(editForm.sectorId, sectors);
-    }
     const adminKey = editMeta.adminKey;
     if (typeof editForm.isAdmin === "boolean") {
       payload[adminKey] = editForm.isAdmin;
@@ -379,12 +318,6 @@ export default function AdminUsersPage() {
             : item,
         ),
       );
-      if (payload.sector_id !== undefined) {
-        setDrafts((prev) => ({
-          ...prev,
-          [toIdString(editingUser.id)]: editForm.sectorId,
-        }));
-      }
       setEditOpen(false);
     } catch {
       setError("Falha ao atualizar usuário.");
@@ -393,26 +326,6 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleDelete = async (user: UserSummary) => {
-    const ok = window.confirm(
-      `Excluir o usuário "${getUserLabel(user)}"? Essa ação não pode ser desfeita.`,
-    );
-    if (!ok) {
-      return;
-    }
-    setError(null);
-    try {
-      await deleteUser(user.id);
-      setUsers((prev) => prev.filter((item) => toIdString(item.id) !== toIdString(user.id)));
-      setDrafts((prev) => {
-        const next = { ...prev };
-        delete next[toIdString(user.id)];
-        return next;
-      });
-    } catch {
-      setError("Falha ao excluir usuário.");
-    }
-  };
 
   const handleResetPassword = async (user: UserSummary) => {
     const userId = toIdString(user.id);
@@ -685,21 +598,6 @@ export default function AdminUsersPage() {
                   placeholder="Digite para alterar"
                 />
               </label>
-              <label className="filter-field">
-                <span>Setor</span>
-                <select
-                  className="input-select"
-                  value={editForm.sectorId}
-                  onChange={(event) =>
-                    setEditForm((prev) => ({
-                      ...prev,
-                      sectorId: event.target.value,
-                    }))
-                  }
-                >
-                  {renderSectorOptions()}
-                </select>
-              </label>
               <label className="check-item">
                 <input
                   type="checkbox"
@@ -804,11 +702,9 @@ export default function AdminUsersPage() {
             ) : (
               filteredUsers.map((user) => {
                 const userId = toIdString(user.id);
-                const currentSectorId = getUserSectorId(user);
-                const draftSectorId = drafts[userId] ?? currentSectorId;
-                const hasChanges = draftSectorId !== currentSectorId;
-                const isSaving = savingId === userId;
                 const isResetting = resettingId === userId;
+                const sectorLabel =
+                  user.sector?.name || user.sector_name || getUserSectorId(user) || "—";
                 return (
                   <tr key={userId}>
                     <td>
@@ -819,34 +715,14 @@ export default function AdminUsersPage() {
                     </td>
                     <td>{getUserContact(user)}</td>
                     <td>
-                      <select
-                        className="input-select"
-                        value={draftSectorId}
-                        onChange={(event) =>
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [userId]: event.target.value,
-                          }))
-                        }
-                        disabled={loading || sectors.length === 0 || isSaving}
-                      >
-                        {renderSectorOptions()}
-                      </select>
+                      <span className="info-value">{sectorLabel}</span>
                     </td>
                     <td>
-                      <button
-                        className="btn btn-primary btn-sm"
-                        type="button"
-                        onClick={() => handleSave(user)}
-                        disabled={!hasChanges || isSaving || sectors.length === 0}
-                      >
-                        {isSaving ? "Salvando..." : "Salvar"}
-                      </button>
                       <button
                         className="btn btn-secondary btn-sm"
                         type="button"
                         onClick={() => openEdit(user)}
-                        disabled={isSaving || isResetting}
+                        disabled={isResetting}
                       >
                         Editar
                       </button>
@@ -857,13 +733,6 @@ export default function AdminUsersPage() {
                         disabled={isResetting}
                       >
                         {isResetting ? "Resetando..." : "Resetar"}
-                      </button>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        type="button"
-                        onClick={() => handleDelete(user)}
-                      >
-                        Excluir
                       </button>
                     </td>
                   </tr>

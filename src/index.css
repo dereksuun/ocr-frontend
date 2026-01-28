@@ -86,9 +86,6 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 6px;
-  padding-top: 8px;
-  border-top: 1px dashed var(--border);
 }
 
 .nav-group-title {

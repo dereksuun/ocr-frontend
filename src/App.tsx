@@ -21,6 +21,8 @@ import AdminSectorsPage from "./pages/AdminSectorsPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import ProfilePage from "./pages/ProfilePage";
 import BillingPage from "./pages/BillingPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import "./App.css";
 import { onAuthRequired } from "./lib/api";
 
@@ -72,20 +74,17 @@ function Layout() {
           <span>TRATAMENTO DE DOCUMENTOS</span>
         </div>
         <nav className="nav-links">
-          <NavLink className={buildNavClass} to="/documents">
-            Documentos
-          </NavLink>
           <NavLink className={buildNavClass} to="/upload">
             Upload
           </NavLink>
-          <NavLink className={buildNavClass} to="/keywords">
-            Palavras-Chave
-          </NavLink>
-          <NavLink className={buildNavClass} to="/presets">
-            Filtros
+          <NavLink className={buildNavClass} to="/documents">
+            Documentos
           </NavLink>
           <NavLink className={buildNavClass} to="/profile">
             Perfil
+          </NavLink>
+          <NavLink className={buildNavClass} to="/billing">
+            Billing
           </NavLink>
           <div className="nav-group">
             <button
@@ -99,6 +98,12 @@ function Layout() {
             </button>
             {configOpen ? (
               <div className="nav-sub">
+                <NavLink className={buildNavClass} to="/extration">
+                  Extração
+                </NavLink>
+                <NavLink className={buildNavClass} to="/presets">
+                  Filtros
+                </NavLink>
                 {isAdmin ? (
                   <NavLink className={buildNavClass} to="/admin/sectors">
                     Setores
@@ -109,9 +114,6 @@ function Layout() {
                     Usuários
                   </NavLink>
                 ) : null}
-                <NavLink className={buildNavClass} to="/billing">
-                  Billing
-                </NavLink>
               </div>
             ) : null}
           </div>
@@ -228,13 +230,15 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route element={<Layout />}>
         <Route element={<ProtectedRoute />}>
           <Route index element={<Navigate to="/documents" replace />} />
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/documents/:id/json" element={<DocumentJsonPage />} />
           <Route path="/upload" element={<UploadPage />} />
-          <Route path="/keywords" element={<KeywordsPage />} />
+          <Route path="/extration" element={<KeywordsPage />} />
           <Route path="/presets" element={<PresetsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/billing" element={<BillingPage />} />

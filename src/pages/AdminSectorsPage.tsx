@@ -189,7 +189,7 @@ export default function AdminSectorsPage() {
                     <td>
                       <div className="actions">
                         <button
-                          className="btn btn-ghost btn-sm"
+                          className="btn btn-secondary btn-sm"
                           type="button"
                           onClick={() => openEdit(sector)}
                           disabled={saving}
@@ -197,7 +197,7 @@ export default function AdminSectorsPage() {
                           Editar
                         </button>
                         <button
-                          className="btn btn-secondary btn-sm"
+                          className="btn btn-ghost btn-sm"
                           type="button"
                           onClick={() => handleToggleActive(sector)}
                           disabled={saving}

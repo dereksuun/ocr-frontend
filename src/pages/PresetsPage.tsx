@@ -336,7 +336,7 @@ export default function PresetsPage() {
                 </div>
                 <div className="keyword-admin-actions">
                   <button
-                    className="btn btn-ghost btn-sm"
+                    className="btn btn-secondary btn-sm"
                     type="button"
                     onClick={() => handleEdit(preset)}
                     disabled={saving}

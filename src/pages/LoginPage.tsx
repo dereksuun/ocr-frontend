@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 
 type LocationState = {
@@ -98,6 +98,9 @@ export default function LoginPage() {
             <button className="btn btn-primary" type="submit" disabled={submitting}>
               {submitting ? "Entrando..." : "Entrar"}
             </button>
+            <Link className="btn btn-ghost" to="/forgot-password">
+              Esqueci minha senha
+            </Link>
           </div>
         </form>
       </div>

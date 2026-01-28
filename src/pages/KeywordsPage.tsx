@@ -186,7 +186,7 @@ export default function KeywordsPage() {
     <div className="card">
       <div className="page-header">
         <div>
-          <h1>Configurações de extração</h1>
+          <h1>Extração</h1>
           <p className="help-text">
             Selecione os campos e palavras-chave que devem ser extraídos em novos
             uploads.
