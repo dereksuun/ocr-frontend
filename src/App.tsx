@@ -9,6 +9,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import { useAuth } from "./context/authContext";
+import { useUser } from "./context/userContext";
 import DocumentsPage from "./pages/DocumentsPage";
 import DocumentJsonPage from "./pages/DocumentJsonPage";
 import KeywordsPage from "./pages/KeywordsPage";
@@ -16,6 +17,10 @@ import LogoutPage from "./pages/LogoutPage";
 import LoginPage from "./pages/LoginPage";
 import PresetsPage from "./pages/PresetsPage";
 import UploadPage from "./pages/UploadPage";
+import AdminSectorsPage from "./pages/AdminSectorsPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import ProfilePage from "./pages/ProfilePage";
+import BillingPage from "./pages/BillingPage";
 import "./App.css";
 import { onAuthRequired } from "./lib/api";
 
@@ -25,7 +30,9 @@ const buildNavClass = ({ isActive }: { isActive: boolean }) =>
 function Layout() {
   const [authRequired, setAuthRequired] = useState(false);
   const [authStatus, setAuthStatus] = useState<number | null>(null);
+  const [configOpen, setConfigOpen] = useState(false);
   const { isAuthenticated } = useAuth();
+  const { isAdmin } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -36,6 +43,11 @@ function Layout() {
     });
     return unsubscribe;
   }, []);
+  useEffect(() => {
+    if (location.pathname.startsWith("/admin") || location.pathname === "/billing") {
+      setConfigOpen(true);
+    }
+  }, [location.pathname]);
   const showAuthRequired =
     authRequired && !isAuthenticated && location.pathname !== "/login";
 
@@ -72,6 +84,37 @@ function Layout() {
           <NavLink className={buildNavClass} to="/presets">
             Filtros
           </NavLink>
+          <NavLink className={buildNavClass} to="/profile">
+            Perfil
+          </NavLink>
+          <div className="nav-group">
+            <button
+              className="nav-link-button"
+              type="button"
+              onClick={() => setConfigOpen((prev) => !prev)}
+              aria-expanded={configOpen}
+            >
+              <span>Configuração</span>
+              <span className="nav-caret">{configOpen ? "▾" : "▸"}</span>
+            </button>
+            {configOpen ? (
+              <div className="nav-sub">
+                {isAdmin ? (
+                  <NavLink className={buildNavClass} to="/admin/sectors">
+                    Setores
+                  </NavLink>
+                ) : null}
+                {isAdmin ? (
+                  <NavLink className={buildNavClass} to="/admin/users">
+                    Usuários
+                  </NavLink>
+                ) : null}
+                <NavLink className={buildNavClass} to="/billing">
+                  Billing
+                </NavLink>
+              </div>
+            ) : null}
+          </div>
           <NavLink className={buildNavClass} to="/logout">
             Sair
           </NavLink>
@@ -83,9 +126,9 @@ function Layout() {
             <div className="card auth-banner">
               <div className="page-header">
                 <div>
-                  <h1>Nao autenticado</h1>
+                  <h1>Não autenticado</h1>
                   <p className="help-text">
-                    Sua sessao expirou ou voce nao tem permissao.
+                    Sua sessão expirou ou você não tem permissão.
                     {authStatus ? ` (status ${authStatus})` : ""}
                   </p>
                 </div>
@@ -109,8 +152,8 @@ function NotFoundPage() {
     <div className="card">
       <div className="page-header">
         <div>
-          <h1>Pagina nao encontrada</h1>
-          <p className="help-text">O endereco informado nao existe.</p>
+          <h1>Página não encontrada</h1>
+          <p className="help-text">O endereço informado não existe.</p>
         </div>
       </div>
     </div>
@@ -127,7 +170,7 @@ function ProtectedRoute() {
         <div className="page-header">
           <div>
             <h1>Carregando</h1>
-            <p className="help-text">Verificando autenticacao...</p>
+            <p className="help-text">Verificando autenticação...</p>
           </div>
         </div>
       </div>
@@ -147,6 +190,40 @@ function ProtectedRoute() {
   return <Outlet />;
 }
 
+function AdminRoute() {
+  const { isAdmin, isLoading } = useUser();
+
+  if (isLoading) {
+    return (
+      <div className="card">
+        <div className="page-header">
+          <div>
+            <h1>Carregando</h1>
+            <p className="help-text">Verificando permissão de administrador...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="card">
+        <div className="page-header">
+          <div>
+            <h1>Acesso restrito</h1>
+            <p className="help-text">
+              Você não tem permissão para acessar esta área.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <Outlet />;
+}
+
 function App() {
   return (
     <Routes>
@@ -159,6 +236,12 @@ function App() {
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/keywords" element={<KeywordsPage />} />
           <Route path="/presets" element={<PresetsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/billing" element={<BillingPage />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/admin/sectors" element={<AdminSectorsPage />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
+          </Route>
           <Route path="/logout" element={<LogoutPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

@@ -244,10 +244,10 @@ export default function DocumentTable({
               </th>
               <th data-min-width="160">Nome do documento</th>
               <th data-min-width="120">Data cadastro</th>
-              <th data-min-width="220">Informacoes</th>
+              <th data-min-width="220">Trecho</th>
               <th data-min-width="150">Contato</th>
               <th data-min-width="110">Status</th>
-              <th data-min-width="170">Acoes</th>
+              <th data-min-width="170">Ações</th>
             </tr>
           </thead>
           <tbody>

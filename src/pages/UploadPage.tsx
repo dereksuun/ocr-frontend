@@ -6,6 +6,7 @@ import {
   type ChangeEvent,
 } from "react";
 import { Link } from "react-router-dom";
+import { useUser } from "../context/userContext";
 import type { DocumentStatus } from "../lib/api";
 import {
   fetchDocument,
@@ -63,6 +64,8 @@ const nextLocalId = () =>
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 export default function UploadPage() {
+  const { sector, isLoading: userLoading } = useUser();
+  const isBlocked = !userLoading && !sector;
   const handleOpenFile = (file: File) => {
     const url = URL.createObjectURL(file);
     window.open(url, "_blank", "noopener,noreferrer");
@@ -144,8 +147,11 @@ export default function UploadPage() {
   }, [pendingIds]);
 
   useEffect(() => {
+    if (isBlocked) {
+      return;
+    }
     loadEnabledFields();
-  }, [loadEnabledFields]);
+  }, [loadEnabledFields, isBlocked]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -161,8 +167,12 @@ export default function UploadPage() {
     if (uploads.length === 0) {
       return;
     }
+    if (isBlocked) {
+      setError("Usuário sem setor atribuído.");
+      return;
+    }
     if (enabledFields === null) {
-      setError("Campos habilitados nao carregados.");
+      setError("Campos habilitados não carregados.");
       return;
     }
     setIsUploading(true);
@@ -228,6 +238,12 @@ export default function UploadPage() {
           Voltar
         </Link>
       </div>
+      {isBlocked ? (
+        <div className="notice">
+          Usuário sem setor atribuído. Contate o administrador. Upload
+          desabilitado.
+        </div>
+      ) : null}
       {error ? <p className="error-hint">{error}</p> : null}
       {fieldsLoading ? (
         <p className="help-text">Carregando campos habilitados...</p>
@@ -238,7 +254,7 @@ export default function UploadPage() {
           className="btn btn-ghost btn-sm"
           type="button"
           onClick={loadEnabledFields}
-          disabled={fieldsLoading}
+          disabled={fieldsLoading || isBlocked}
         >
           Recarregar campos
         </button>
@@ -257,6 +273,7 @@ export default function UploadPage() {
             multiple
             accept="application/pdf"
             onChange={handleFileChange}
+            disabled={isBlocked}
           />
         </label>
         <div className="upload-actions">
@@ -264,7 +281,9 @@ export default function UploadPage() {
             className="btn btn-primary"
             type="button"
             onClick={handleUpload}
-            disabled={uploads.length === 0 || isUploading || enabledFields === null}
+            disabled={
+              uploads.length === 0 || isUploading || enabledFields === null || isBlocked
+            }
           >
             Enviar
           </button>
@@ -272,7 +291,7 @@ export default function UploadPage() {
             className="btn btn-ghost"
             type="button"
             onClick={handleClear}
-            disabled={uploads.length === 0 || isUploading}
+            disabled={uploads.length === 0 || isUploading || isBlocked}
           >
             Limpar lista
           </button>

@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import axios from "axios";
+import { useUser } from "../context/userContext";
 import { fetchDocument, fetchDocumentJson, getApiBaseUrl } from "../lib/api";
 import type { Document } from "../lib/api";
 
 export default function DocumentJsonPage() {
   const { id } = useParams<{ id: string }>();
+  const { sector, isLoading: userLoading } = useUser();
+  const isBlocked = !userLoading && !sector;
   const [doc, setDoc] = useState<Document | null>(null);
   const [jsonContent, setJsonContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -23,7 +27,14 @@ export default function DocumentJsonPage() {
 
   useEffect(() => {
     if (!id) {
-      setError("Documento nao encontrado.");
+      setError("Documento não encontrado.");
+      return;
+    }
+    if (isBlocked) {
+      setDoc(null);
+      setJsonContent(null);
+      setLoading(false);
+      setError("Usuário sem setor atribuído. Contate o administrador.");
       return;
     }
 
@@ -31,6 +42,8 @@ export default function DocumentJsonPage() {
     const load = async () => {
       setLoading(true);
       setError(null);
+      setDoc(null);
+      setJsonContent(null);
       try {
         const [docResponse, jsonResponse] = await Promise.all([
           fetchDocument(id),
@@ -45,10 +58,18 @@ export default function DocumentJsonPage() {
             ? jsonResponse
             : JSON.stringify(jsonResponse, null, 2);
         setJsonContent(formatted);
-      } catch {
-        if (isActive) {
-          setError("Falha ao carregar o JSON do documento.");
+      } catch (err) {
+        if (!isActive) {
+          return;
         }
+        if (axios.isAxiosError(err)) {
+          const status = err.response?.status;
+          if (status === 403 || status === 404) {
+            setError("Você não tem permissão para acessar este documento.");
+            return;
+          }
+        }
+        setError("Falha ao carregar o JSON do documento.");
       } finally {
         if (isActive) {
           setLoading(false);
@@ -60,13 +81,13 @@ export default function DocumentJsonPage() {
     return () => {
       isActive = false;
     };
-  }, [id]);
+  }, [id, isBlocked]);
 
   return (
     <div className="card">
       <div className="page-header">
         <div>
-          <h1>JSON extraido</h1>
+          <h1>JSON extraído</h1>
           <p className="help-text">
             Documento {doc?.filename || (id ?? "")}
           </p>

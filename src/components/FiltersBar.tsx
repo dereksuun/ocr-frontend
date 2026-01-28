@@ -122,7 +122,7 @@ export default function FiltersBar({
       {showPresetFields ? (
         <div className="filters-row filters-row--extra">
           <label className="filter-field">
-            <span>Experiencia minima (anos)</span>
+            <span>Experiência mínima (anos)</span>
             <input
               className="input-text"
               type="number"

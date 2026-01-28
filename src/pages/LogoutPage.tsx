@@ -16,7 +16,7 @@ export default function LogoutPage() {
       <div className="page-header">
         <div>
           <h1>Sair</h1>
-          <p className="help-text">Encerrando sessao...</p>
+          <p className="help-text">Encerrando sessão...</p>
         </div>
       </div>
     </div>

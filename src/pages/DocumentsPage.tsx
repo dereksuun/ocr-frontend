@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import DocumentTable from "../components/DocumentTable";
 import FiltersBar from "../components/FiltersBar";
+import { useUser } from "../context/userContext";
 import type { Document, DocumentFilters, Preset } from "../lib/api";
 import {
   bulkDownloadFiles,
@@ -25,6 +26,8 @@ const initialFilters: DocumentFilters = {
 };
 
 export default function DocumentsPage() {
+  const { sector, isLoading: userLoading } = useUser();
+  const isBlocked = !userLoading && !sector;
   const log = useCallback((...args: unknown[]) => {
     if (import.meta.env.DEV) {
       console.info(...args);
@@ -49,6 +52,10 @@ export default function DocumentsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const loadPresets = useCallback(async () => {
+    if (isBlocked) {
+      setPresetsLoading(false);
+      return;
+    }
     setPresetsLoading(true);
     try {
       const result = await fetchPresets();
@@ -58,7 +65,7 @@ export default function DocumentsPage() {
     } finally {
       setPresetsLoading(false);
     }
-  }, []);
+  }, [isBlocked]);
 
   useEffect(() => {
     log("[DocumentsPage] entrou");
@@ -66,6 +73,15 @@ export default function DocumentsPage() {
   }, [loadPresets, log]);
 
   useEffect(() => {
+    if (isBlocked) {
+      setDocuments([]);
+      setTotalCount(0);
+      setHasNextPage(false);
+      setHasPreviousPage(false);
+      setSelectedIds(new Set());
+      setLoading(false);
+      return;
+    }
     const loadDocuments = async () => {
       setLoading(true);
       setError(null);
@@ -102,9 +118,13 @@ export default function DocumentsPage() {
     };
 
     loadDocuments();
-  }, [appliedFilters, page, pageSize, log]);
+  }, [appliedFilters, page, pageSize, log, isBlocked]);
 
   useEffect(() => {
+    if (isBlocked) {
+      setProcessingCount(null);
+      return;
+    }
     const filtersActive = Boolean(
       appliedFilters.query ||
         appliedFilters.exclude ||
@@ -141,7 +161,7 @@ export default function DocumentsPage() {
     return () => {
       isActive = false;
     };
-  }, [appliedFilters]);
+  }, [appliedFilters, isBlocked]);
 
   const pollingIds = useMemo(
     () =>
@@ -152,6 +172,9 @@ export default function DocumentsPage() {
   );
 
   useEffect(() => {
+    if (isBlocked) {
+      return;
+    }
     if (pollingIds.length === 0) {
       return;
     }
@@ -180,7 +203,26 @@ export default function DocumentsPage() {
       isActive = false;
       window.clearInterval(interval);
     };
-  }, [pollingIds]);
+  }, [pollingIds, isBlocked]);
+
+  if (isBlocked) {
+    return (
+      <div className="card">
+        <div className="page-header">
+          <div>
+            <h1>Documentos</h1>
+            <p className="help-text">
+              Usuário sem setor atribuído. Contate o administrador.
+            </p>
+          </div>
+        </div>
+        <div className="notice">
+          Upload e listagem de documentos estão desabilitados até a definição do
+          setor.
+        </div>
+      </div>
+    );
+  }
 
   const handleApplyFilters = () => {
     setPage(1);
@@ -233,7 +275,7 @@ export default function DocumentsPage() {
   );
   const processingNotice =
     filtersActive && processingCount
-      ? "Documentos em processamento nao entram nos filtros."
+      ? "Documentos em processamento não entram nos filtros."
       : null;
 
   const handleToggleSelect = (id: string) => {
@@ -384,10 +426,10 @@ export default function DocumentsPage() {
       />
       <div className="pagination">
         <span className="results-meta">
-          Pagina {page} de {totalPages}
+          Página {page} de {totalPages}
         </span>
         <label className="filter-field">
-          <span>Itens por pagina</span>
+          <span>Itens por página</span>
           <select
             className="input-select"
             value={pageSize}
@@ -415,7 +457,7 @@ export default function DocumentsPage() {
           onClick={handleNextPage}
           disabled={loading || !canGoNext}
         >
-          Proxima
+          Próxima
         </button>
       </div>
     </div>

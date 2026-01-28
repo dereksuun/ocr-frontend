@@ -51,7 +51,7 @@ const formatPresetMeta = (preset: Preset) => {
     parts.push("Excluir desconhecidos");
   }
   if (preset.experience_min_years !== null) {
-    parts.push(`Experiencia: ${preset.experience_min_years}+ anos`);
+    parts.push(`Experiência: ${preset.experience_min_years}+ anos`);
   }
   if (preset.age_min_years !== null || preset.age_max_years !== null) {
     const min = preset.age_min_years === null ? "?" : String(preset.age_min_years);
@@ -192,7 +192,7 @@ export default function PresetsPage() {
         <div>
           <h1>{heading}</h1>
           <p className="help-text">
-            Crie filtros reutilizaveis por palavras-chave, idade e experiencia.
+            Crie filtros reutilizáveis por palavras-chave, idade e experiência.
           </p>
         </div>
         <Link className="btn btn-ghost" to="/documents">
@@ -240,10 +240,10 @@ export default function PresetsPage() {
                 setFormState({ ...formState, excludeUnknowns: event.target.checked })
               }
             />
-            <span>Excluir curriculos sem idade/experiencia detectada</span>
+            <span>Excluir currículos sem idade/experiência detectada</span>
           </label>
           <label className="filter-field">
-            <span>Experiencia minima (anos)</span>
+            <span>Experiência mínima (anos)</span>
             <input
               className="input-text"
               type="number"

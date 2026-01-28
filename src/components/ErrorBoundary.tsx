@@ -32,7 +32,7 @@ export default class ErrorBoundary extends Component<
             <div>
               <h1>Erro na tela</h1>
               <p className="help-text">
-                Ocorreu um erro inesperado durante a renderizacao.
+                Ocorreu um erro inesperado durante a renderização.
               </p>
             </div>
           </div>

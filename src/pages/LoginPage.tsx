@@ -11,7 +11,15 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as LocationState | null;
-  const redirectTo = state?.from || "/documents";
+  const rawRedirectTo = state?.from || "/documents";
+  const redirectTo =
+    rawRedirectTo === "/logout" || rawRedirectTo === "/login"
+      ? "/documents"
+      : rawRedirectTo;
+  const shouldLog =
+    import.meta.env.DEV &&
+    typeof window !== "undefined" &&
+    window.localStorage.getItem("debug_auth") === "1";
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -29,10 +37,22 @@ export default function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
+      if (shouldLog) {
+        console.info("[auth]", "LoginPage:submit", {
+          username: username.trim(),
+          redirectTo,
+        });
+      }
       await login(username.trim(), password);
+      if (shouldLog) {
+        console.info("[auth]", "LoginPage:success", { redirectTo });
+      }
       navigate(redirectTo, { replace: true });
     } catch {
-      setError("Credenciais invalidas. Tente novamente.");
+      if (shouldLog) {
+        console.warn("[auth]", "LoginPage:error");
+      }
+      setError("Credenciais inválidas. Tente novamente.");
     } finally {
       setSubmitting(false);
     }
@@ -48,12 +68,12 @@ export default function LoginPage() {
           </div>
         </div>
         {isLoading ? (
-          <p className="help-text">Verificando sessao...</p>
+          <p className="help-text">Verificando sessão...</p>
         ) : null}
         {error ? <p className="error-hint">{error}</p> : null}
         <form className="settings-form" onSubmit={handleSubmit}>
           <label className="filter-field">
-            <span>Usuario</span>
+            <span>Usuário</span>
             <input
               className="input-text"
               type="text"

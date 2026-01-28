@@ -66,7 +66,7 @@ export default function KeywordsPage() {
       setKeywords(response.keywords || []);
       setEnabledFields(new Set(response.enabled_fields || []));
     } catch {
-      setError("Falha ao carregar configuracoes de extracao.");
+      setError("Falha ao carregar configurações de extração.");
     } finally {
       setLoading(false);
     }
@@ -124,7 +124,7 @@ export default function KeywordsPage() {
       setKeywords(response.keywords || []);
       setEnabledFields(new Set(response.enabled_fields || []));
     } catch {
-      setError("Falha ao salvar configuracoes.");
+      setError("Falha ao salvar configurações.");
     } finally {
       setSaving(false);
     }
@@ -137,7 +137,7 @@ export default function KeywordsPage() {
       setError("Informe uma palavra-chave.");
       return;
     }
-    const ok = window.confirm(`Voce digitou: "${trimmed}". Confirmar?`);
+    const ok = window.confirm(`Você digitou: "${trimmed}". Confirmar?`);
     if (!ok) {
       return;
     }
@@ -186,13 +186,13 @@ export default function KeywordsPage() {
     <div className="card">
       <div className="page-header">
         <div>
-          <h1>Configuracoes de extracao</h1>
+          <h1>Configurações de extração</h1>
           <p className="help-text">
-            Selecione os campos e palavras-chave que devem ser extraidos em novos
+            Selecione os campos e palavras-chave que devem ser extraídos em novos
             uploads.
           </p>
           <p className="help-text">
-            Nenhuma opcao e obrigatoria; voce pode desmarcar tudo.
+            Nenhuma opção é obrigatória; você pode desmarcar tudo.
           </p>
         </div>
         <Link className="btn btn-ghost" to="/documents">
@@ -202,7 +202,7 @@ export default function KeywordsPage() {
 
       {error ? <p className="error-hint">{error}</p> : null}
       {adminError ? <p className="error-hint">{adminError}</p> : null}
-      {loading ? <p className="help-text">Carregando configuracoes...</p> : null}
+      {loading ? <p className="help-text">Carregando configurações...</p> : null}
 
       <div className="settings-form">
         <div className="settings-toolbar">
@@ -297,7 +297,7 @@ export default function KeywordsPage() {
             onClick={handleSave}
             disabled={saving || loading}
           >
-            {saving ? "Salvando..." : "Salvar configuracoes"}
+            {saving ? "Salvando..." : "Salvar configurações"}
           </button>
           <button
             className="btn btn-ghost"

@@ -5,6 +5,29 @@ const baseURL = rawBaseUrl.replace(/\/$/, "");
 const AUTH_REQUIRED_EVENT = "auth:required";
 const REFRESH_TOKEN_KEY = "ocr_refresh_token";
 
+const isDebugAuth = () => {
+  if (!import.meta.env.DEV) {
+    return false;
+  }
+  if (typeof window === "undefined") {
+    return false;
+  }
+  const flag = window.localStorage.getItem("debug_auth");
+  return flag === "1" || import.meta.env.VITE_DEBUG_AUTH === "true";
+};
+
+const authLog = (...args: unknown[]) => {
+  if (isDebugAuth()) {
+    console.info("[auth]", ...args);
+  }
+};
+
+const authWarn = (...args: unknown[]) => {
+  if (isDebugAuth()) {
+    console.warn("[auth]", ...args);
+  }
+};
+
 type TokenListener = (token: string | null) => void;
 type AuthRequiredDetail = { status?: number };
 
@@ -36,7 +59,9 @@ export const setAccessToken = (token: string | null) => {
 
 export const subscribeAccessToken = (listener: TokenListener) => {
   tokenListeners.add(listener);
-  return () => tokenListeners.delete(listener);
+  return () => {
+    tokenListeners.delete(listener);
+  };
 };
 
 export const getRefreshToken = () => {
@@ -85,38 +110,102 @@ type TokenResponse = { access: string; refresh: string };
 type RefreshResponse = { access: string; refresh?: string };
 
 export const loginWithCredentials = async (username: string, password: string) => {
-  const response = await authApi.post<TokenResponse>("/api/auth/token/", {
+  authLog("loginWithCredentials:start", {
     username,
-    password,
+    baseURL,
+    withCredentials: authApi.defaults.withCredentials,
   });
-  const { access, refresh } = response.data;
-  setAccessToken(access);
-  setRefreshToken(refresh);
-  return response.data;
+  try {
+    const response = await authApi.post<TokenResponse>("/api/auth/token/", {
+      username,
+      password,
+    });
+    const { access, refresh } = response.data;
+    setAccessToken(access);
+    setRefreshToken(refresh);
+    authLog("loginWithCredentials:success", {
+      status: response.status,
+      hasAccess: Boolean(access),
+      accessLength: access?.length ?? 0,
+      hasRefresh: Boolean(refresh),
+      refreshLength: refresh?.length ?? 0,
+    });
+    return response.data;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      authWarn("loginWithCredentials:error", {
+        status: err.response?.status,
+        data: err.response?.data,
+      });
+    } else {
+      authWarn("loginWithCredentials:error", { error: err });
+    }
+    throw err;
+  }
 };
 
 export const refreshAccessToken = async () => {
   const refresh = getRefreshToken();
   if (!refresh) {
+    authWarn("refreshAccessToken:missing_refresh");
     return null;
   }
-  const response = await authApi.post<RefreshResponse>("/api/auth/token/refresh/", {
-    refresh,
+  authLog("refreshAccessToken:start", {
+    baseURL,
+    refreshLength: refresh.length,
   });
-  const { access, refresh: nextRefresh } = response.data;
-  if (access) {
-    setAccessToken(access);
+  try {
+    const response = await authApi.post<RefreshResponse>("/api/auth/token/refresh/", {
+      refresh,
+    });
+    const { access, refresh: nextRefresh } = response.data;
+    if (access) {
+      setAccessToken(access);
+    }
+    if (nextRefresh) {
+      setRefreshToken(nextRefresh);
+    }
+    authLog("refreshAccessToken:success", {
+      status: response.status,
+      hasAccess: Boolean(access),
+      accessLength: access?.length ?? 0,
+      hasRefresh: Boolean(nextRefresh),
+      refreshLength: nextRefresh?.length ?? 0,
+    });
+    return access;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      authWarn("refreshAccessToken:error", {
+        status: err.response?.status,
+        data: err.response?.data,
+      });
+    } else {
+      authWarn("refreshAccessToken:error", { error: err });
+    }
+    throw err;
   }
-  if (nextRefresh) {
-    setRefreshToken(nextRefresh);
-  }
-  return access;
 };
 
 let refreshPromise: Promise<string | null> | null = null;
 
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
+  const url = config.url || "";
+  if (
+    isDebugAuth() &&
+    (url.includes("/api/auth/") ||
+      url.includes("/api/me/") ||
+      url.includes("/api/profile/"))
+  ) {
+    authLog("request", {
+      method: config.method,
+      url,
+      hasAuthHeader: Boolean(
+        config.headers && "Authorization" in config.headers,
+      ),
+      hasToken: Boolean(token),
+    });
+  }
   if (token) {
     config.headers = config.headers ?? {};
     if (!("Authorization" in config.headers)) {
@@ -143,6 +232,7 @@ api.interceptors.response.use(
       requestUrl.includes("/api/auth/token/refresh/");
 
     if (status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint) {
+      authWarn("response:401:attempt_refresh", { url: requestUrl });
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
         clearTokens();
@@ -160,6 +250,7 @@ api.interceptors.response.use(
         if (newAccess) {
           originalRequest.headers = originalRequest.headers ?? {};
           originalRequest.headers.Authorization = `Bearer ${newAccess}`;
+          authLog("response:401:retry_with_new_access", { url: requestUrl });
           return api(originalRequest);
         }
       } catch {
@@ -171,6 +262,7 @@ api.interceptors.response.use(
     }
 
     if (status === 401 || status === 403) {
+      authWarn("response:auth_required", { status, url: requestUrl });
       emitAuthRequired({ status });
     }
     return Promise.reject(error);
@@ -191,6 +283,29 @@ export type Document = {
   search_snippet?: string;
   created_at: string;
   updated_at: string;
+};
+
+export type Sector = {
+  id: string | number;
+  name: string;
+  is_active?: boolean;
+  active?: boolean;
+};
+
+export type UserSummary = {
+  id: string | number;
+  name?: string;
+  full_name?: string;
+  username?: string;
+  email?: string;
+  sector?: Sector | null;
+  sector_id?: string | number | null;
+  sector_name?: string | null;
+  is_admin?: boolean;
+  is_staff?: boolean;
+  is_superuser?: boolean;
+  is_active?: boolean;
+  active?: boolean;
 };
 
 export type Preset = {
@@ -313,6 +428,121 @@ const normalizePaginated = <T,>(data: unknown, keys: string[]) => {
   }
 
   return { items, count, next, previous };
+};
+
+export const fetchMe = async (): Promise<UserSummary> => {
+  try {
+    const response = await api.get<UserSummary>("/api/me/");
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      const response = await api.get<UserSummary>("/api/profile/");
+      return response.data;
+    }
+    throw error;
+  }
+};
+
+export type ProfileResponse = UserSummary & Record<string, unknown>;
+
+export const fetchProfile = async (): Promise<ProfileResponse> => {
+  const response = await api.get<ProfileResponse>("/api/profile/");
+  return response.data;
+};
+
+export const updateProfile = async (payload: Record<string, unknown>) => {
+  const response = await api.patch<ProfileResponse>("/api/profile/", payload);
+  return response.data;
+};
+
+export type BillingOverviewResponse = Record<string, unknown>;
+
+export const fetchBillingOverview = async (): Promise<BillingOverviewResponse> => {
+  const response = await api.get<BillingOverviewResponse>("/api/billing/overview/");
+  return response.data;
+};
+
+export type SectorPayload = {
+  name: string;
+  is_active?: boolean;
+  active?: boolean;
+};
+
+export const fetchSectors = async (): Promise<ListResponse<Sector>> => {
+  const response = await api.get("/api/sectors/");
+  const items = normalizeList<Sector>(response.data, ["results", "sectors", "items"]);
+  return { items, status: response.status };
+};
+
+export const createSector = async (payload: SectorPayload) => {
+  const response = await api.post<Sector>("/api/sectors/", payload);
+  return response.data;
+};
+
+export const updateSector = async (
+  id: string | number,
+  payload: Partial<SectorPayload>,
+) => {
+  const response = await api.patch<Sector>(`/api/sectors/${id}/`, payload);
+  return response.data;
+};
+
+export const deleteSector = async (id: string | number) => {
+  await api.delete(`/api/sectors/${id}/`);
+};
+
+export type UpdateUserPayload = {
+  sector_id?: string | number | null;
+  name?: string;
+  full_name?: string;
+  password?: string;
+  is_admin?: boolean;
+  is_staff?: boolean;
+  is_superuser?: boolean;
+  is_active?: boolean;
+  active?: boolean;
+};
+
+export type CreateUserPayload = {
+  username: string;
+  password: string;
+  email?: string;
+  sector_id?: string | number | null;
+  is_admin?: boolean;
+};
+
+export const fetchUsers = async (): Promise<ListResponse<UserSummary>> => {
+  const response = await api.get("/api/users/");
+  const items = normalizeList<UserSummary>(response.data, ["results", "users", "items"]);
+  return { items, status: response.status };
+};
+
+export const createUser = async (payload: CreateUserPayload) => {
+  const response = await api.post<UserSummary>("/api/users/", payload);
+  return response.data;
+};
+
+export const updateUser = async (id: string | number, payload: UpdateUserPayload) => {
+  const response = await api.patch<UserSummary>(`/api/users/${id}/`, payload);
+  return response.data;
+};
+
+export const deleteUser = async (id: string | number) => {
+  await api.delete(`/api/users/${id}/`);
+};
+
+export type ResetPasswordResponse = {
+  temp_password?: string;
+  temporary_password?: string;
+  password?: string;
+  message?: string;
+};
+
+export const resetUserPassword = async (id: string | number) => {
+  const response = await api.post<ResetPasswordResponse>(
+    `/api/users/${id}/reset-password/`,
+  );
+  return response.data;
 };
 
 export const fetchPresets = async (): Promise<ListResponse<Preset>> => {
