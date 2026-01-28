@@ -255,6 +255,13 @@ export default function DocumentsPage() {
     setPage((prev) => Math.max(1, prev - 1));
   };
 
+  const handleGoToPage = (value: number) => {
+    if (value === page || value < 1 || value > totalPages) {
+      return;
+    }
+    setPage(value);
+  };
+
   const handlePageSizeChange = (value: number) => {
     setPageSize(value);
     setPage(1);
@@ -264,6 +271,19 @@ export default function DocumentsPage() {
   const canGoNext = hasNextPage || page < totalPages;
   const canGoPrevious = hasPreviousPage || page > 1;
   const resultCount = totalCount || documents.length;
+  const pageNumbers = (() => {
+    const maxButtons = 5;
+    let start = Math.max(1, page - 2);
+    let end = Math.min(totalPages, start + maxButtons - 1);
+    if (end - start < maxButtons - 1) {
+      start = Math.max(1, end - maxButtons + 1);
+    }
+    const items: number[] = [];
+    for (let i = start; i <= end; i += 1) {
+      items.push(i);
+    }
+    return items;
+  })();
   const filtersActive = Boolean(
     appliedFilters.query ||
       appliedFilters.exclude ||
@@ -451,6 +471,19 @@ export default function DocumentsPage() {
         >
           Anterior
         </button>
+        <div className="pagination-pages">
+          {pageNumbers.map((value) => (
+            <button
+              key={value}
+              className={`btn btn-ghost btn-sm${value === page ? " is-active" : ""}`}
+              type="button"
+              onClick={() => handleGoToPage(value)}
+              disabled={loading}
+            >
+              {value}
+            </button>
+          ))}
+        </div>
         <button
           className="btn btn-ghost btn-sm"
           type="button"
